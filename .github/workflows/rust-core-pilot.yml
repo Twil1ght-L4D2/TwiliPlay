@@ -1,0 +1,32 @@
+name: Rust core pilot
+on:
+  push:
+    branches: [rust-core/rgb565-pilot]
+    paths-ignore: ['docs/**']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    env:
+      NWLINK: nwlink
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Baseline
+        run: |
+          make -j2 foundation
+          echo 'd94a55ff1fc5f9442f5617aa955dad7baf3cb62db19eccfaf397ecf8e5a5e225  build/foundation/TwiliPlay.nwa' | sha256sum -c
+      - name: ARM equivalence and instruction counts
+        run: |
+          cd experiments/rust-core
+          rustc --crate-type lib --emit obj -C opt-level=s -C panic=abort --target thumbv7em-none-eabihf mix.rs -o mix.o
+          arm-none-eabi-gcc -Os -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -ffunction-sections -c ../../launcher/src/gfx.c -o gfx.o
+          for object in gfx mix; do arm-none-eabi-objcopy -O binary -j .text.gfx_mix "$object.o" "$object.bin"; done
+          python3 compare.py gfx.bin mix.bin
+      - name: Measure linked candidate in disposable checkout
+        run: |
+          sed -i '/^color_t gfx_mix(/,/^}/d' launcher/src/gfx.c
+          sed -i '/^LAUNCHER_OBJS = /s|$| experiments/rust-core/mix.o|' Makefile
+          make -j2 foundation
+          python3 tests/test_small_ram.py build/foundation/TwiliPlay.nwa
