@@ -1,0 +1,31 @@
+name: Rust settings pilot
+on:
+  push:
+    branches: [rust-core/settings-reader]
+    paths-ignore: ['docs/**']
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    env:
+      NWLINK: nwlink
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Verify released baseline
+        run: |
+          make -j2 foundation
+          echo 'd94a55ff1fc5f9442f5617aa955dad7baf3cb62db19eccfaf397ecf8e5a5e225  build/foundation/TwiliPlay.nwa' | sha256sum -c
+      - name: Stage experimental readers in disposable checkout
+        run: |
+          git apply experiments/settings/candidate.patch
+          mkdir -p build/settings-pilot
+          rustc --crate-type lib --emit obj -C opt-level=s -C panic=abort -C relocation-model=pic experiments/settings/read.rs -o build/settings-pilot/host.o
+          python3 experiments/settings/compare.py
+      - name: Check installed footprint and save recovery
+        run: |
+          rustc --crate-type lib --emit obj -C opt-level=s -C panic=abort --target thumbv7em-none-eabihf experiments/settings/read.rs -o build/settings-pilot/read.o
+          make -j2 foundation
+          python3 tests/test_progress.py build/foundation/TwiliPlay.nwa --catalog build/foundation-games.json
+          python3 tests/test_small_ram.py build/foundation/TwiliPlay.nwa

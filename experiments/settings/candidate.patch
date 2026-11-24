@@ -1,0 +1,42 @@
+--- a/launcher/src/storage.c
++++ b/launcher/src/storage.c
+@@ -107,7 +107,8 @@
+ #define MOTION_NAME "twili_anim.set"
+-bool np_motion_load(void) {
+-  uint32_t len;
+-  const uint8_t *p = ef_read(MOTION_NAME, &len);
+-  return !(p && len == 2 && p[0] == 1 && p[1] == 0);
+-}
++extern bool tw_motion(const uint8_t *data, uint32_t length);
++bool np_motion_load(void) {
++  uint32_t len = 0;
++  const uint8_t *data = ef_read(MOTION_NAME, &len);
++  return tw_motion(data, len);
++}
+ bool np_motion_save(bool enabled) {
+@@ -117,9 +118,11 @@
+ #define THEME_NAME "twili.set"
+-bool np_theme_load(int *id) {
+-  uint32_t len = 0;
+-  const uint8_t *d = ef_read(THEME_NAME, &len);
+-  if (!d || len != 3 || d[0] != 'T' || d[1] != 1) return false;
+-  *id = d[2];
+-  return true;
+-}
++extern int tw_theme_id(const uint8_t *data, uint32_t length);
++bool np_theme_load(int *id) {
++  uint32_t len = 0;
++  const uint8_t *data = ef_read(THEME_NAME, &len);
++  int value = tw_theme_id(data, len);
++  if (value < 0) return false;
++  *id = value;
++  return true;
++}
+ bool np_theme_save(int id) {
+--- a/Makefile
++++ b/Makefile
+@@ -169,3 +169,3 @@
+ KIT_ALL = $(GAMES) $(OPTIONAL_GAMES) $(XL_GAMES)
+-LAUNCHER_OBJS = $(patsubst launcher/src/%.c,$(B)/arm/%.o,$(LAUNCHER_SRC))
++LAUNCHER_OBJS = $(patsubst launcher/src/%.c,$(B)/arm/%.o,$(LAUNCHER_SRC)) build/settings-pilot/read.o
+ KIT_GAMES = $(foreach g,$(KIT_ALL),$(KIT)/games/$(g).o)
