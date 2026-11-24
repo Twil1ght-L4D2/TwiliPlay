@@ -1,0 +1,20 @@
+name: NumBlocks walking profile
+on:
+  push:
+    branches: [performance/numblocks-profile]
+    paths-ignore: ['docs/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    env:
+      NWLINK: nwlink
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Build and check N0120 budgets
+        run: make -j2 foundation
+      - name: Replay walking workload
+        run: python3 tools/profile_numblocks.py build/foundation
