@@ -1,5 +1,9 @@
 # TwiliPlay changelog
 
+## Unreleased
+
+Added a reproducible [NumBlocks performance baseline](numblocks-performance.md) for the packaged N0120 game, with renderer samples, game-loop counters, memory measurements and a fixed-step visual replay.
+
 ## 0.2.0 Starlight Edition
 
 TwiliPlay now includes 25 games on the NumWorks N0120. The launcher adds a game library, three color themes, a skippable startup splash and a persistent Animations setting. Turning animations off skips the splash and makes card navigation immediate. Existing game saves are preserved.
