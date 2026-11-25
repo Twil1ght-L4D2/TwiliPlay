@@ -16,5 +16,12 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build and check N0120 budgets
         run: make -j2 foundation
-      - name: Replay walking workload
-        run: python3 tools/profile_numblocks.py build/foundation
+      - name: Confirm released executable
+        run: echo 'd94a55ff1fc5f9442f5617aa955dad7baf3cb62db19eccfaf397ecf8e5a5e225  build/foundation/TwiliPlay.nwa' | sha256sum -c
+      - name: Repeat walking workload from fresh storage
+        shell: bash
+        run: |
+          for replay in 1 2; do
+            python3 tools/profile_numblocks.py build/foundation | tee "build/profile-$replay.txt"
+          done
+          diff -u build/profile-{1,2}.txt
